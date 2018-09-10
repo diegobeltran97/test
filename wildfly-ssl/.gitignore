@@ -1,0 +1,14 @@
+*~
+
+/target
+*/target
+*/**/target
+/build
+*/build
+
+.idea/*
+out
+.idea
+*.ipr
+*.iws
+*.iml

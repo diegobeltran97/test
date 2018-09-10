@@ -1,0 +1,105 @@
+version: '2'
+services:
+  int-server:
+    image: docker.esbu.smartmatic.net/dnk-integrations-app:${INT_VERSION}
+    container_name: int-server
+    ports:
+    - "${INT_PORT}:8080"
+    networks:
+     - empnet
+    depends_on:
+    - intpostgres
+    volumes:
+    - "./.nemlogin/:/nemlogin/"
+    - "./tls/:/tls/"
+    environment:
+    - SPRING_PROFILES_ACTIVE=qa
+    - DKINT_EMP_URL=${EMPURL}
+    - DKINT_LOGIN_EMP_BASEURL=${EMPURL}
+    - LOGGING_LEVEL_SMTT_DKINT=DEBUG
+    - LOGGING_LEVEL_ORG_HIBERNATE_SQL=INFO
+    - DKINT_GEOGRAPHY_PRECINCTSENDPOINT=http://dawa.aws.dk/afstemningsomraader
+    - DKINT_GEOGRAPHY_REGIONSENDPOINT=http://dawa.aws.dk/regioner
+    - DKINT_GEOGRAPHY_MUNICIPALITIESENDPOINT=http://dawa.aws.dk/kommuner
+    - DKINT_GEOGRAPHY_CONSTITUENCIESENDPOINT=http://dawa.aws.dk/opstillingskredse
+    - DKINT_GEOGRAPHY_EMPENDPOINT=/rest/integrations/zipImport
+    - DKINT_VOTERLIST_REMOTEDIR=dkint/cpr/qa-amazon
+    - DKINT_VOTERLIST_EMPENDPOINT=/api/voterlist/callback
+    - DKINT_CANDIDATES_EMPENDPOINT=/api/candidates/callback
+    - SERVER_SSL_KEYSTORE=/tls/int-server-keystore.jks
+    - SERVER_SSL_KEYSTOREPASSWORD=ABCD1234
+    - SERVER_SSL_TRUSTSTORE=/tls/truststore-cert-emp-client.jks
+    - SERVER_SSL_TRUSTSTOREPASSWORD=1234ABCD
+    - SERVER_SSL_CLIENTAUTH=need
+    - DKINT_EMP_TLS_KEYSTORE=file:/tls/int-client-keystore.jks
+    - DKINT_EMP_TLS_KEYSTOREPASSWORD=ABCD1234
+    - DKINT_EMP_TLS_TRUSTSTORE=file:/tls/truststore-cert-emp-server.jks
+    - DKINT_EMP_TLS_TRUSTSTOREPASSWORD=1234ABCD
+    - DKINT_CPR_ENDPOINT=http://cprmock:8080/cpr/
+  nemloginmock:
+    image: docker.esbu.smartmatic.net/dnk-integrations-mock:${INT_VERSION}
+    container_name: nemlogin-mock
+    ports:
+    - "8081:8080"
+    environment:
+    - CALLBACK=${INTURL}
+    networks:
+     - empnet
+  cprmock:
+    image: docker.esbu.smartmatic.net/dnk-integrations-cpr-mock:${INT_VERSION}
+    container_name: cpr-mock
+    ports:
+    - "8082:8080"
+    networks:
+     - empnet
+  intpostgres:
+    image: postgres
+    container_name: intdb-dnk
+    ports:
+     - "5432:5432"
+    networks:
+     - empnet
+    environment:
+     - POSTGRES_PASSWORD=postgres
+     - POSTGRES_USER=postgres
+     - POSTGRES_DB=dkint
+     - POSTGRES_PORT=5432
+  empdb-dnk:
+    image: docker.esbu.smartmatic.net/empdb-dnk:${EMP_VERSION}
+    container_name: empdb-dnk
+    hostname: empdb-dnk
+    networks:
+     - empnet
+    ports:
+     - "1521:1521"
+    shm_size: 2g
+    volumes:
+    - "./sql/:/u01/app/oracle/support/"
+    environment:
+     - MODE=test
+  emp-server:
+    image: docker.esbu.smartmatic.net/emp-dnk:${EMP_VERSION}
+    container_name: emp-server
+    hostname: emp-server
+    networks:
+     - empnet
+    ports:
+     - "80:80"
+     - "443:443"
+     - "8787:8787"
+    environment:
+     - APP_LANGUAGE=da
+     - DB_HOST=empdb-dnk
+     - INTEGRATION_BASE_URL=${INTURL}
+     - SERVER_NAME=emp-server
+    volumes:
+     - /dev/urandom:/dev/random
+     - "./jks:/opt/jboss/wildfly/standalone/configuration/jks"
+networks:
+  empnet:
+    driver: bridge
+    driver_opts:
+        com.docker.network.driver.mtu: ${MTU_SIZE}
+    ipam:
+      config:
+      - subnet: 172.30.0.0/16

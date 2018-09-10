@@ -1,0 +1,105 @@
+version: '2'
+services:
+  app:
+    image: 667048495336.dkr.ecr.eu-west-1.amazonaws.com/dxc-test-integrations-app:${INT_VERSION}
+    container_name: intapp-dnk
+    ports:
+    - "${INT_PORT}:8080"
+    networks:
+     - empnet
+    depends_on:
+    - intpostgres
+    volumes:
+    - "./.nemlogin/:/nemlogin/"
+    environment:
+    - SPRING_PROFILES_ACTIVE=qa
+    - DKINT_EMP_URL=${EMPURL}
+    - DKINT_LOGIN_EMP_BASEURL=${EMPURL}
+    - LOGGING_LEVEL_SMTT_DKINT=DEBUG
+    - LOGGING_LEVEL_ORG_HIBERNATE_SQL=INFO
+    - DKINT_GEOGRAPHY_PRECINCTSENDPOINT=http://dawa.aws.dk/afstemningsomraader
+    - DKINT_GEOGRAPHY_REGIONSENDPOINT=http://dawa.aws.dk/regioner
+    - DKINT_GEOGRAPHY_MUNICIPALITIESENDPOINT=http://dawa.aws.dk/kommuner
+    - DKINT_GEOGRAPHY_CONSTITUENCIESENDPOINT=http://dawa.aws.dk/opstillingskredse
+    - DKINT_GEOGRAPHY_EMPENDPOINT=/rest/integrations/zipImport
+    - DKINT_VOTERLIST_REMOTEDIR=dkint/cpr/qa-amazon
+    - DKINT_VOTERLIST_EMPENDPOINT=/api/voterlist/callback
+    - DKINT_CANDIDATES_EMPENDPOINT=/api/candidates/callback
+    - SERVER_SSL_KEYSTORE=/tls/int-server-keystore.jks
+    - SERVER_SSL_KEYSTOREPASSWORD=ABCD1234
+    - SERVER_SSL_TRUSTSTORE=/tls/truststore-cert-emp-client.jks
+    - SERVER_SSL_TRUSTSTOREPASSWORD=1234ABCD
+    - SERVER_SSL_CLIENTAUTH=need
+    - DKINT_GEOGRAPHY_TLS_KEYSTORE=file:/tls/int-client-keystore.jks
+    - DKINT_GEOGRAPHY_TLS_KEYSTOREPASSWORD=ABCD1234
+    - DKINT_GEOGRAPHY_TLS_TRUSTSTORE=file:/tls/truststore-cert-emp-server.jks
+    - DKINT_GEOGRAPHY_TLS_TRUSTSTOREPASSWORD=1234ABCD
+    - DKINT_VOTERLIST_TLS_KEYSTORE=file:/tls/int-client-keystore.jks
+    - DKINT_VOTERLIST_TLS_KEYSTOREPASSWORD=ABCD1234
+    - DKINT_VOTERLIST_TLS_TRUSTSTORE=file:/tls/truststore-cert-emp-server.jks
+    - DKINT_VOTERLIST_TLS_TRUSTSTOREPASSWORD=1234ABCD
+  nemloginmock:
+    image: 667048495336.dkr.ecr.eu-west-1.amazonaws.com/dxc-test-integrations-mock:${INT_VERSION}
+    container_name: nemlogin-mock
+    ports:
+    - "8081:8080"
+    environment:
+    - CALLBACK=${INTURL}
+    networks:
+     - empnet
+  cprmock:
+    image: 667048495336.dkr.ecr.eu-west-1.amazonaws.com/dxc-test-integrations-cpr-mock:${INT_VERSION}
+    container_name: cpr-mock
+    ports:
+    - "8082:8080"
+    networks:
+     - empnet
+  intpostgres:
+    image: postgres
+    container_name: intdb-dnk
+    ports:
+     - "5432:5432"
+    networks:
+     - empnet
+    environment:
+     - POSTGRES_PASSWORD=postgres
+     - POSTGRES_USER=postgres
+     - POSTGRES_DB=dkint
+     - POSTGRES_PORT=5432
+  empdb-dnk:
+    image: 667048495336.dkr.ecr.eu-west-1.amazonaws.com/dxc-test-emp-db:${EMP_VERSION}
+    container_name: empdb-dnk
+    hostname: empdb-dnk
+    networks:
+     - empnet
+    ports:
+     - "1521:1521"
+    shm_size: 2g
+    volumes:
+    - "./sql/:/u01/app/oracle/support/"
+    environment:
+     - MODE=test
+  empapp-dnk:
+    image: 667048495336.dkr.ecr.eu-west-1.amazonaws.com/dxc-test-emp:${EMP_VERSION}
+    container_name: empapp-dnk
+    hostname: empapp-dnk
+    networks:
+     - empnet
+    ports:
+     - "80:80"
+     - "443:443"
+     - "8787:8787"
+    links:
+     - empdb-dnk:empdb-dnk
+    environment:
+     - APP_LANGUAGE=da
+     - DB_HOST=empdb-dnk
+     - INTEGRATION_BASE_URL=${INTURL}
+    volumes:
+     - /dev/urandom:/dev/random
+networks:
+  empnet:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.30.0.0/16

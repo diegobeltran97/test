@@ -1,0 +1,4 @@
+[2018-07-27 15:39:13,792] [INFO ] [main] [dk.itst.oiosaml.configuration.FileConfiguration] Loading urn:oasis:names:tc:SAML:2.0:protocol metadata from nemlogin/./metadata/IdP/ContextHandlerMockMetadata.xml
+[2018-07-27 15:39:13,901] [INFO ] [main] [dk.itst.oiosaml.configuration.FileConfiguration] Loading urn:oasis:names:tc:SAML:2.0:protocol metadata from nemlogin/./metadata/IdP/NemLoginMockMetadata.xml
+[2018-07-27 15:41:50,109] [INFO ] [https-jsse-nio-8080-exec-6] [dk.itst.oiosaml.configuration.FileConfiguration] Config filename: nemlogin/oiosaml-sp.properties
+[2018-07-27 15:41:50,132] [INFO ] [https-jsse-nio-8080-exec-6] [dk.itst.oiosaml.configuration.FileConfiguration] Looking in : /nemlogin/oiosaml-sp.properties

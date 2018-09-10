@@ -1,0 +1,13 @@
+<html>
+<head><title>Working...</title></head>
+<body onload="document.forms[0].submit();">
+<form method="POST" name="hiddenform" action="{{EMP_HREF}}">
+    <input type="hidden" name="display_name" value="{{DISPLAY_NAME}}"/>
+    <input type="hidden" name="unique_identifier" value="{{UNIQUE_IDENTIFIER}}"/>
+    <input type="hidden" name="expiry_time" value="{{EXPIRY_TIME}}"/>
+    <input type="hidden" name="jurisdiction_role" value="{{JURISDICTION_ROLE}}"/>
+    <input type="hidden" name="loginsource" value="{{LOGIN_SOURCE}}"/>
+    <noscript><p>Script is disabled. Click Submit to continue.</p><input type="submit" value="Submit"/></noscript>
+</form>
+</body>
+</html>
